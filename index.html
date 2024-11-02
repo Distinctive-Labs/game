@@ -5,140 +5,324 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mission G6-9944</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #f0f0f0; }
-        canvas { display: block; background: #e0e0e0; }
-        #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); }
-        h1 { color: #333; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        body { margin: 0; overflow: hidden; background-color: #333; }
+        canvas { display: block; background-color: #87CEEB; }
+        #startScreen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            text-align: center;
+        }
+        #startScreen button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <div id="startScreen">
         <h1>Welcome to Mission G6-9944</h1>
-        <button id="startButton">Start Game</button>
-        <p>Use Arrow keys or WASD to move, Space to jump, and 'F' to attack!</p>
+        <p>Collect all gems to progress through the levels!</p>
+        <button onclick="startGame()">Start Mission</button>
     </div>
-    <canvas id="gameCanvas"></canvas>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
 
-        let isGameRunning = false;
-        let keys = {};
+        const WIDTH = canvas.width;
+        const HEIGHT = canvas.height;
+
+        const COLORS = {
+            player: "#007bff",
+            platform: "#28a745",
+            enemy: "#ff4d4d",
+            collectible: "#ffc107",
+            gem: "#ff00ff",
+            boss: "#8b0000",
+            projectile: "#ff4500"
+        };
+
         const gravity = 0.5;
         const friction = 0.9;
-        const player = { x: 50, y: canvas.height - 150, width: 50, height: 50, speed: 5, speedX: 0, speedY: 0, jumping: false, score: 0, attackRange: 20 };
 
+        const player = {
+            x: 100,
+            y: HEIGHT - 60,
+            width: 50,
+            height: 50,
+            speedX: 0,
+            speedY: 0,
+            speed: 5,
+            jumping: false,
+            score: 0,
+        };
+
+        let currentLevel = 0;
         const levels = [
             {
                 platforms: [
-                    { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
-                    { x: 100, y: canvas.height - 80, width: 100, height: 20 },
-                    { x: 300, y: canvas.height - 150, width: 150, height: 20 },
-                    { x: 500, y: canvas.height - 250, width: 120, height: 20 },
-                    { x: 650, y: canvas.height - 350, width: 200, height: 20 },
-                    { x: 900, y: canvas.height - 150, width: 150, height: 20 }
+                    { x: 0, y: HEIGHT - 20, width: WIDTH, height: 20 },
+                    { x: 200, y: 450, width: 120, height: 20 },
+                    { x: 400, y: 350, width: 120, height: 20 },
+                    { x: 600, y: 250, width: 120, height: 20 },
                 ],
                 enemies: [
-                    { x: 150, y: canvas.height - 100, width: 40, height: 40, defeated: false },
-                    { x: 600, y: canvas.height - 200, width: 40, height: 40, defeated: false }
+                    { x: 500, y: HEIGHT - 70, width: 30, height: 30, speedX: 2 },
                 ],
-                collectibles: [],
-                gem: null,
-                boss: null
+                collectibles: [
+                    { x: 300, y: 430, width: 20, height: 20, collected: false },
+                ],
+                gem: { x: 700, y: 200, width: 20, height: 20, collected: false },
+            },
+            {
+                platforms: [
+                    { x: 0, y: HEIGHT - 20, width: WIDTH, height: 20 },
+                    { x: 150, y: 450, width: 120, height: 20 },
+                    { x: 350, y: 350, width: 120, height: 20 },
+                    { x: 550, y: 250, width: 120, height: 20 },
+                ],
+                enemies: [
+                    { x: 400, y: HEIGHT - 70, width: 30, height: 30, speedX: 3 },
+                ],
+                collectibles: [
+                    { x: 200, y: 430, width: 20, height: 20, collected: false },
+                ],
+                gem: { x: 750, y: 150, width: 20, height: 20, collected: false },
+            },
+            {
+                platforms: [
+                    { x: 0, y: HEIGHT - 20, width: WIDTH, height: 20 },
+                    { x: 200, y: 400, width: 120, height: 20 },
+                    { x: 400, y: 300, width: 120, height: 20 },
+                ],
+                boss: {
+                    x: WIDTH - 120,
+                    y: HEIGHT / 2 - 50,
+                    width: 100,
+                    height: 100,
+                    speedX: 3,
+                    health: 5,
+                    shootInterval: 100,
+                    shootTimer: 0,
+                },
+                projectiles: []
             }
-            // You can define more levels here
         ];
 
-        document.getElementById('startButton').addEventListener('click', startGame);
-        window.addEventListener('keydown', (e) => keys[e.key] = true);
-        window.addEventListener('keyup', (e) => keys[e.key] = false);
+        const keys = {};
+        window.addEventListener("keydown", (e) => (keys[e.key] = true));
+        window.addEventListener("keyup", (e) => (keys[e.key] = false));
+
+        let isGameRunning = false;
 
         function startGame() {
+            document.getElementById("startScreen").style.display = "none";
             isGameRunning = true;
-            document.getElementById('startScreen').style.display = 'none';
+            player.score = 0;
+            currentLevel = 0;
+            loadLevel(currentLevel);
             gameLoop();
+        }
+
+        function loadLevel(levelIndex) {
+            const level = levels[levelIndex];
+            player.x = 100;
+            player.y = HEIGHT - 60;
+            player.speedX = 0;
+            player.speedY = 0;
+            player.jumping = false;
+            if (level.boss) {
+                level.boss.health = 5;
+                level.projectiles = [];
+            }
         }
 
         function gameLoop() {
             if (!isGameRunning) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            handlePlayerMovement(levels[0]);
-            handlePlayerAttack(levels[0]);
-            draw(levels[0]);
-            requestAnimationFrame(gameLoop);
-        }
 
-        function draw(level) {
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+            const level = levels[currentLevel];
+
+            // Draw platforms
+            ctx.fillStyle = COLORS.platform;
             level.platforms.forEach(platform => {
-                ctx.fillStyle = '#8B4513'; // Brown for platforms
                 ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
             });
 
-            level.enemies.forEach(enemy => {
-                if (!enemy.defeated) {
-                    ctx.fillStyle = '#FF0000'; // Red for enemies
-                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+            if (level.boss) handleBossLevel(level);
+            else handleNormalLevel(level);
+
+            ctx.fillStyle = COLORS.player;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            handlePlayerMovement(level);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function handleNormalLevel(level) {
+            ctx.fillStyle = COLORS.collectible;
+            level.collectibles.forEach(collectible => {
+                if (!collectible.collected) {
+                    ctx.fillRect(collectible.x, collectible.y, collectible.width, collectible.height);
+                    if (player.x < collectible.x + collectible.width &&
+                        player.x + player.width > collectible.x &&
+                        player.y < collectible.y + collectible.height &&
+                        player.y + player.height > collectible.y) {
+                        collectible.collected = true;
+                        player.score += 10;
+                    }
                 }
             });
 
-            ctx.fillStyle = "#000";
-            ctx.font = "20px Arial";
-            ctx.fillText("Score: " + player.score, 10, 20);
+            ctx.fillStyle = COLORS.enemy;
+            level.enemies.forEach(enemy => {
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                enemy.x += enemy.speedX;
+                if (enemy.x <= 0 || enemy.x + enemy.width >= WIDTH) enemy.speedX *= -1;
+
+                if (player.x < enemy.x + enemy.width &&
+                    player.x + player.width > enemy.x &&
+                    player.y < enemy.y + enemy.height &&
+                    player.y + player.height > enemy.y) {
+                    endGame();
+                }
+            });
+
+            ctx.fillStyle = COLORS.gem;
+            if (!level.gem.collected) {
+                ctx.fillRect(level.gem.x, level.gem.y, level.gem.width, level.gem.height);
+                if (player.x < level.gem.x + level.gem.width &&
+                    player.x + player.width > level.gem.x &&
+                    player.y < level.gem.y + level.gem.height &&
+                    player.y + player.height > level.gem.y) {
+                    level.gem.collected = true;
+                    nextLevel();
+                }
+            }
         }
 
-        function checkCollision(obj1, obj2, range = 0) {
-            return obj1.x < obj2.x + obj2.width + range &&
-                   obj1.x + obj1.width > obj2.x - range &&
-                   obj1.y < obj2.y + obj2.height + range &&
-                   obj1.y + obj1.height > obj2.y - range;
+        function handleBossLevel(level) {
+            const boss = level.boss;
+
+            ctx.fillStyle = COLORS.boss;
+            ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
+
+            // Boss movement
+            boss.x += boss.speedX;
+            if (boss.x <= 0 || boss.x + boss.width >= WIDTH) boss.speedX *= -1;
+
+            // Boss shooting projectiles
+            if (boss.shootTimer++ >= boss.shootInterval) {
+                level.projectiles.push({
+                    x: boss.x + boss.width / 2,
+                    y: boss.y + boss.height / 2,
+                    speedX: (Math.random() - 0.5) * 6,
+                    speedY: Math.random() * 4 + 2,
+                    width: 10,
+                    height: 10
+                });
+                boss.shootTimer = 0;
+            }
+
+            ctx.fillStyle = COLORS.projectile;
+            level.projectiles.forEach((projectile, index) => {
+                ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
+                projectile.x += projectile.speedX;
+                projectile.y += projectile.speedY;
+
+                // Check collision with player
+                if (player.x < projectile.x + projectile.width &&
+                    player.x + player.width > projectile.x &&
+                    player.y < projectile.y + projectile.height &&
+                    player.y + player.height > projectile.y) {
+                    endGame();
+                }
+
+                // Remove projectile if off screen
+                if (projectile.y > HEIGHT) level.projectiles.splice(index, 1);
+            });
+
+            // Check if boss is defeated
+            if (boss.health <= 0) {
+                nextLevel();
+            }
         }
 
         function handlePlayerMovement(level) {
-            if (keys["ArrowLeft"] || keys["a"]) player.speedX = -player.speed;
-            if (keys["ArrowRight"] || keys["d"]) player.speedX = player.speed;
-            if ((keys[" "] || keys["w"]) && !player.jumping) {
-                player.speedY = -12;
-                player.jumping = true;
-            }
             player.speedY += gravity;
-            player.speedX *= friction;
+
+            if (keys["ArrowLeft"] || keys["a"]) {
+                player.speedX = -player.speed;
+            } else if (keys["ArrowRight"] || keys["d"]) {
+                player.speedX = player.speed;
+            } else {
+                player.speedX = 0;
+            }
+
+            if (keys["ArrowUp"] || keys["w"]) {
+                if (!player.jumping) {
+                    player.speedY = -10;
+                    player.jumping = true;
+                }
+            }
+
             player.x += player.speedX;
             player.y += player.speedY;
 
-            // Check for floor collision
-            if (player.y + player.height > canvas.height) {
-                player.y = canvas.height - player.height;
-                player.jumping = false;
-            }
-
+            // Collision with platforms
             level.platforms.forEach(platform => {
-                if (checkCollision(player, platform)) {
-                    player.y = platform.y - player.height;
-                    player.speedY = 0;
+                if (player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x &&
+                    player.y + player.height >= platform.y &&
+                    player.y + player.height <= platform.y + player.speedY) {
                     player.jumping = false;
+                    player.speedY = 0;
+                    player.y = platform.y - player.height;
                 }
             });
+
+            // Boundaries
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > WIDTH) player.x = WIDTH - player.width;
+            if (player.y > HEIGHT) endGame();
         }
 
-        function handlePlayerAttack(level) {
-            if (keys["f"]) {
-                level.enemies.forEach(enemy => {
-                    if (!enemy.defeated && checkCollision(player, enemy, player.attackRange)) {
-                        enemy.defeated = true;
-                        player.score += 20;
-                    }
-                });
+        function endGame() {
+            alert(`Game Over! Your score: ${player.score}`);
+            isGameRunning = false;
+            document.getElementById("startScreen").style.display = "flex";
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            if (currentLevel >= levels.length) {
+                alert(`You completed the game! Your score: ${player.score}`);
+                isGameRunning = false;
+                document.getElementById("startScreen").style.display = "flex";
+            } else {
+                loadLevel(currentLevel);
             }
         }
-
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
     </script>
 </body>
 </html>
