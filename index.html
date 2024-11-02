@@ -17,21 +17,35 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.9);
             color: #fff;
             font-family: Arial, sans-serif;
             font-size: 24px;
             text-align: center;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+        }
+        #startScreen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        #startScreen p {
+            font-size: 20px;
         }
         #startScreen button {
             margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 20px;
+            padding: 15px 30px;
+            font-size: 24px;
             cursor: pointer;
             background-color: #28a745;
             color: #fff;
             border: none;
             border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        #startScreen button:hover {
+            background-color: #218838;
         }
         #instructions {
             font-size: 18px;
@@ -54,14 +68,15 @@
         </div>
         <button onclick="startGame()">Start Mission</button>
     </div>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <canvas id="gameCanvas"></canvas>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        const WIDTH = canvas.width;
-        const HEIGHT = canvas.height;
+        // Set canvas size to fill the window
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
         const COLORS = {
             player: "#007bff",
@@ -78,7 +93,7 @@
 
         const player = {
             x: 100,
-            y: HEIGHT - 60,
+            y: canvas.height - 60,
             width: 50,
             height: 50,
             speedX: 0,
@@ -93,13 +108,13 @@
         const levels = [
             {
                 platforms: [
-                    { x: 0, y: HEIGHT - 20, width: WIDTH, height: 20 },
+                    { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
                     { x: 200, y: 450, width: 120, height: 20 },
                     { x: 400, y: 350, width: 120, height: 20 },
                     { x: 600, y: 250, width: 120, height: 20 },
                 ],
                 enemies: [
-                    { x: 500, y: HEIGHT - 70, width: 30, height: 30, speedX: 2, defeated: false },
+                    { x: 500, y: canvas.height - 70, width: 30, height: 30, speedX: 2, defeated: false },
                 ],
                 collectibles: [
                     { x: 300, y: 430, width: 20, height: 20, collected: false },
@@ -108,14 +123,14 @@
             },
             {
                 platforms: [
-                    { x: 0, y: HEIGHT - 20, width: WIDTH, height: 20 },
+                    { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
                     { x: 150, y: 450, width: 120, height: 20 },
                     { x: 350, y: 350, width: 120, height: 20 },
                     { x: 550, y: 250, width: 120, height: 20 },
                 ],
                 enemies: [
-                    { x: 400, y: HEIGHT - 70, width: 30, height: 30, speedX: 3, defeated: false },
-                    { x: 600, y: HEIGHT - 70, width: 30, height: 30, speedX: -2, defeated: false },
+                    { x: 400, y: canvas.height - 70, width: 30, height: 30, speedX: 3, defeated: false },
+                    { x: 600, y: canvas.height - 70, width: 30, height: 30, speedX: -2, defeated: false },
                 ],
                 collectibles: [
                     { x: 200, y: 430, width: 20, height: 20, collected: false },
@@ -124,13 +139,13 @@
             },
             {
                 platforms: [
-                    { x: 0, y: HEIGHT - 20, width: WIDTH, height: 20 },
+                    { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
                     { x: 200, y: 400, width: 120, height: 20 },
                     { x: 400, y: 300, width: 120, height: 20 },
                 ],
                 boss: {
-                    x: WIDTH - 120,
-                    y: HEIGHT / 2 - 50,
+                    x: canvas.width - 120,
+                    y: canvas.height / 2 - 50,
                     width: 100,
                     height: 100,
                     speedX: 3,
@@ -139,6 +154,37 @@
                     shootTimer: 0,
                 },
                 projectiles: []
+            },
+            // Additional levels
+            {
+                platforms: [
+                    { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
+                    { x: 100, y: 500, width: 200, height: 20 },
+                    { x: 400, y: 400, width: 200, height: 20 },
+                ],
+                enemies: [
+                    { x: 300, y: canvas.height - 70, width: 30, height: 30, speedX: -3, defeated: false },
+                ],
+                collectibles: [
+                    { x: 150, y: 480, width: 20, height: 20, collected: false },
+                ],
+                gem: { x: 650, y: 150, width: 20, height: 20, collected: false },
+            },
+            {
+                platforms: [
+                    { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
+                    { x: 250, y: 450, width: 200, height: 20 },
+                    { x: 500, y: 350, width: 200, height: 20 },
+                    { x: 700, y: 250, width: 100, height: 20 },
+                ],
+                enemies: [
+                    { x: 450, y: canvas.height - 70, width: 30, height: 30, speedX: 4, defeated: false },
+                    { x: 600, y: canvas.height - 70, width: 30, height: 30, speedX: -3, defeated: false },
+                ],
+                collectibles: [
+                    { x: 200, y: 430, width: 20, height: 20, collected: false },
+                ],
+                gem: { x: 750, y: 200, width: 20, height: 20, collected: false },
             }
         ];
 
@@ -160,84 +206,93 @@
         function loadLevel(levelIndex) {
             const level = levels[levelIndex];
             player.x = 100;
-            player.y = HEIGHT - 60;
+            player.y = canvas.height - 60;
             player.speedX = 0;
             player.speedY = 0;
             player.jumping = false;
+            level.enemies.forEach(enemy => enemy.defeated = false);
+            level.collectibles.forEach(collectible => collectible.collected = false);
             if (level.boss) {
                 level.boss.health = 10;
-                level.projectiles = [];
             }
-            level.enemies.forEach(enemy => enemy.defeated = false);
         }
 
         function gameLoop() {
             if (!isGameRunning) return;
-
-            ctx.clearRect(0, 0, WIDTH, HEIGHT);
-
-            const level = levels[currentLevel];
-
-            // Draw platforms
-            ctx.fillStyle = COLORS.platform;
-            level.platforms.forEach(platform => {
-                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-            });
-
-            if (level.boss) handleBossLevel(level);
-            else handleNormalLevel(level);
-
-            ctx.fillStyle = COLORS.player;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-
-            handlePlayerMovement(level);
-            handlePlayerAttack(level);
-
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            handlePlayerMovement(levels[currentLevel]);
+            handlePlayerAttack(levels[currentLevel]);
+            draw(levels[currentLevel]);
             requestAnimationFrame(gameLoop);
         }
 
-        function handleNormalLevel(level) {
-            ctx.fillStyle = COLORS.collectible;
-            level.collectibles.forEach(collectible => {
-                if (!collectible.collected) {
-                    ctx.fillRect(collectible.x, collectible.y, collectible.width, collectible.height);
-                    if (player.x < collectible.x + collectible.width &&
-                        player.x + player.width > collectible.x &&
-                        player.y < collectible.y + collectible.height &&
-                        player.y + player.height > collectible.y) {
-                        collectible.collected = true;
-                        player.score += 10;
-                    }
-                }
+        function draw(level) {
+            level.platforms.forEach(platform => {
+                ctx.fillStyle = COLORS.platform;
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
             });
 
-            ctx.fillStyle = COLORS.enemy;
             level.enemies.forEach(enemy => {
                 if (!enemy.defeated) {
+                    ctx.fillStyle = COLORS.enemy;
                     ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-                    enemy.x += enemy.speedX;
-                    if (enemy.x <= 0 || enemy.x + enemy.width >= WIDTH) enemy.speedX *= -1;
-
-                    if (player.x < enemy.x + enemy.width &&
-                        player.x + player.width > enemy.x &&
-                        player.y < enemy.y + enemy.height &&
-                        player.y + player.height > enemy.y) {
-                        endGame();
-                    }
                 }
             });
 
-            ctx.fillStyle = COLORS.gem;
-            if (!level.gem.collected) {
-                ctx.fillRect(level.gem.x, level.gem.y, level.gem.width, level.gem.height);
-                if (player.x < level.gem.x + level.gem.width &&
-                    player.x + player.width > level.gem.x &&
-                    player.y < level.gem.y + level.gem.height &&
-                    player.y + player.height > level.gem.y) {
-                    level.gem.collected = true;
-                    nextLevel();
+            level.collectibles.forEach(collectible => {
+                if (!collectible.collected) {
+                    ctx.fillStyle = COLORS.collectible;
+                    ctx.fillRect(collectible.x, collectible.y, collectible.width, collectible.height);
                 }
+            });
+
+            if (level.gem && !level.gem.collected) {
+                ctx.fillStyle = COLORS.gem;
+                ctx.fillRect(level.gem.x, level.gem.y, level.gem.width, level.gem.height);
             }
+
+            if (level.boss) {
+                ctx.fillStyle = COLORS.boss;
+                ctx.fillRect(level.boss.x, level.boss.y, level.boss.width, level.boss.height);
+            }
+
+            ctx.fillStyle = "#000";
+            ctx.font = "20px Arial";
+            ctx.fillText("Score: " + player.score, 10, 20);
+        }
+
+        function checkCollision(obj1, obj2, range = 0) {
+            return obj1.x < obj2.x + obj2.width + range &&
+                   obj1.x + obj1.width > obj2.x - range &&
+                   obj1.y < obj2.y + obj2.height + range &&
+                   obj1.y + obj1.height > obj2.y - range;
+        }
+
+        function handlePlayerMovement(level) {
+            if (keys["ArrowLeft"]) player.speedX = -player.speed;
+            if (keys["ArrowRight"]) player.speedX = player.speed;
+            if (keys[" "] && !player.jumping) {
+                player.speedY = -12;
+                player.jumping = true;
+            }
+            player.speedY += gravity;
+            player.speedX *= friction;
+            player.x += player.speedX;
+            player.y += player.speedY;
+
+            // Check for floor collision
+            if (player.y + player.height > canvas.height) {
+                player.y = canvas.height - player.height;
+                player.jumping = false;
+            }
+
+            level.platforms.forEach(platform => {
+                if (checkCollision(player, platform)) {
+                    player.y = platform.y - player.height;
+                    player.speedY = 0;
+                    player.jumping = false;
+                }
+            });
         }
 
         function handlePlayerAttack(level) {
@@ -259,44 +314,6 @@
             }
         }
 
-        function handleBossLevel(level) {
-            // Boss behavior and handling, omitted for brevity
-        }
-
-        function handlePlayerMovement(level) {
-            if (keys["ArrowLeft"]) player.speedX = -player.speed;
-            if (keys["ArrowRight"]) player.speedX = player.speed;
-            if (keys[" "] && !player.jumping) {
-                player.speedY = -12;
-                player.jumping = true;
-            }
-            player.speedY += gravity;
-            player.speedX *= friction;
-            player.x += player.speedX;
-            player.y += player.speedY;
-            if (player.y + player.height > HEIGHT) {
-                player.y = HEIGHT - player.height;
-                player.jumping = false;
-            }
-            level.platforms.forEach(platform => {
-                if (checkCollision(player, platform)) {
-                    player.y = platform.y - player.height;
-                    player.speedY = 0;
-                    player.jumping = false;
-                }
-            });
-        }
-
-        function nextLevel() {
-            currentLevel++;
-            if (currentLevel >= levels.length) {
-                alert("Congratulations! You completed all levels.");
-                endGame();
-            } else {
-                loadLevel(currentLevel);
-            }
-        }
-
         function endGame(message = "Game Over!") {
             isGameRunning = false;
             setTimeout(() => {
@@ -305,12 +322,10 @@
             }, 100);
         }
 
-        function checkCollision(obj1, obj2, range = 0) {
-            return obj1.x < obj2.x + obj2.width + range &&
-                   obj1.x + obj1.width > obj2.x - range &&
-                   obj1.y < obj2.y + obj2.height + range &&
-                   obj1.y + obj1.height > obj2.y - range;
-        }
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
     </script>
 </body>
 </html>
