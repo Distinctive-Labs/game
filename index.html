@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mission G6-9944</title>
     <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; background: #f0f0f0; }
-        h1 { text-align: center; color: #333; }
-        #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-        button { padding: 10px 20px; font-size: 16px; }
+        body { margin: 0; overflow: hidden; background: #f0f0f0; }
+        canvas { display: block; background: #e0e0e0; }
+        #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); }
+        h1 { color: #333; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="startScreen">
         <h1>Welcome to Mission G6-9944</h1>
         <button id="startButton">Start Game</button>
-        <p>Use Arrow keys to move, Space to jump, and 'F' to attack!</p>
+        <p>Use Arrow keys or WASD to move, Space to jump, and 'F' to attack!</p>
     </div>
     <canvas id="gameCanvas"></canvas>
 
@@ -98,9 +98,9 @@
         }
 
         function handlePlayerMovement(level) {
-            if (keys["ArrowLeft"]) player.speedX = -player.speed;
-            if (keys["ArrowRight"]) player.speedX = player.speed;
-            if (keys[" "] && !player.jumping) {
+            if (keys["ArrowLeft"] || keys["a"]) player.speedX = -player.speed;
+            if (keys["ArrowRight"] || keys["d"]) player.speedX = player.speed;
+            if ((keys[" "] || keys["w"]) && !player.jumping) {
                 player.speedY = -12;
                 player.jumping = true;
             }
