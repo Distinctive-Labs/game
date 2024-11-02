@@ -39,6 +39,8 @@
     <div id="startScreen">
         <h1>Welcome to Mission G6-9944</h1>
         <p>Collect all gems to progress through the levels!</p>
+        <p>Use arrow keys or WASD to move.</p>
+        <p>Press 'F' to fight!</p>
         <button onclick="startGame()">Start Mission</button>
     </div>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
@@ -73,6 +75,7 @@
             speed: 5,
             jumping: false,
             score: 0,
+            health: 100 // Added health for the player
         };
 
         let currentLevel = 0;
@@ -85,7 +88,7 @@
                     { x: 600, y: 250, width: 120, height: 20 },
                 ],
                 enemies: [
-                    { x: 500, y: HEIGHT - 70, width: 30, height: 30, speedX: 2 },
+                    { x: 500, y: HEIGHT - 70, width: 30, height: 30, speedX: 2, health: 1 }, // Added health for enemies
                 ],
                 collectibles: [
                     { x: 300, y: 430, width: 20, height: 20, collected: false },
@@ -100,7 +103,7 @@
                     { x: 550, y: 250, width: 120, height: 20 },
                 ],
                 enemies: [
-                    { x: 400, y: HEIGHT - 70, width: 30, height: 30, speedX: 3 },
+                    { x: 400, y: HEIGHT - 70, width: 30, height: 30, speedX: 3, health: 1 },
                 ],
                 collectibles: [
                     { x: 200, y: 430, width: 20, height: 20, collected: false },
@@ -195,7 +198,7 @@
             });
 
             ctx.fillStyle = COLORS.enemy;
-            level.enemies.forEach(enemy => {
+            level.enemies.forEach((enemy, index) => {
                 ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
                 enemy.x += enemy.speedX;
                 if (enemy.x <= 0 || enemy.x + enemy.width >= WIDTH) enemy.speedX *= -1;
@@ -205,6 +208,15 @@
                     player.y < enemy.y + enemy.height &&
                     player.y + player.height > enemy.y) {
                     endGame();
+                }
+
+                // Check for fight action
+                if (keys["f"] && enemy.health > 0) {
+                    enemy.health--;
+                    if (enemy.health <= 0) {
+                        level.enemies.splice(index, 1); // Remove defeated enemy
+                        player.score += 20; // Reward player for defeating enemy
+                    }
                 }
             });
 
@@ -232,17 +244,18 @@
             if (boss.x <= 0 || boss.x + boss.width >= WIDTH) boss.speedX *= -1;
 
             // Boss shooting projectiles
-            if (boss.shootTimer++ >= boss.shootInterval) {
+            if (boss.shootTimer >= boss.shootInterval) {
                 level.projectiles.push({
                     x: boss.x + boss.width / 2,
-                    y: boss.y + boss.height / 2,
-                    speedX: (Math.random() - 0.5) * 6,
-                    speedY: Math.random() * 4 + 2,
-                    width: 10,
-                    height: 10
+                    y: boss.y + boss.height,
+                    width: 5,
+                    height: 20,
+                    speedX: 0,
+                    speedY: 5,
                 });
                 boss.shootTimer = 0;
             }
+            boss.shootTimer++;
 
             ctx.fillStyle = COLORS.projectile;
             level.projectiles.forEach((projectile, index) => {
@@ -290,16 +303,22 @@
             player.y += player.speedY;
 
             // Collision with platforms
+            let onPlatform = false;
             level.platforms.forEach(platform => {
                 if (player.x < platform.x + platform.width &&
                     player.x + player.width > platform.x &&
                     player.y + player.height >= platform.y &&
                     player.y + player.height <= platform.y + player.speedY) {
+                    onPlatform = true;
                     player.jumping = false;
                     player.speedY = 0;
                     player.y = platform.y - player.height;
                 }
             });
+
+            if (!onPlatform) {
+                player.y += gravity; // Apply gravity if not on a platform
+            }
 
             // Boundaries
             if (player.x < 0) player.x = 0;
